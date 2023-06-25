@@ -1,0 +1,6 @@
+bs4
+urllib3
+requests
+elasticsearch
+elasticsearch_dsl
+loguru
