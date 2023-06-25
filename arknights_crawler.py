@@ -3,7 +3,6 @@ import json
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag as htmlTag
-from collections import deque
 from datetime import datetime
 from typing import List
 from elasticsearch import Elasticsearch
@@ -42,6 +41,7 @@ class Article:
         self.title = title
         self.created_date = date
         self.page_url = url
+        self.content = []
 
         headers = Config.header
 
@@ -119,7 +119,6 @@ class NewsCrawler:
 
     soup: BeautifulSoup = None
     base_url: str = None
-    articles = deque([])
 
     def __init__(self, base_url):
         self.base_url = base_url
