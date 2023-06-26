@@ -1,6 +1,5 @@
-import urllib.request as ulib_request
 import json
-
+import urllib.request as ulib_request
 from bs4 import BeautifulSoup
 from bs4.element import Tag as htmlTag
 from datetime import datetime
@@ -12,7 +11,8 @@ import sys, os
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.util.config import Config, ElasticSearchConfig
+from crawler.crawler import Crawler
+from crawler.util.config import ElasticSearchConfig, Config
 from crawler.util import util
 
 es_client = Elasticsearch(ElasticSearchConfig.ES_SERVER_URL)
@@ -34,7 +34,7 @@ class Content:
         return f"{'='*20} Content image: {self.image_url} {'='*20} \n {'='*20} Content text: {self.text_list} {'='*20}"
 
 class Article:
-    
+       
     page_url: str = None
     created_date: str = None
     title: str = None
@@ -117,20 +117,10 @@ class Article:
     
     def __str__(self): return json.dumps(self.__dict__)
 
+class NewsCrawler(Crawler):
     
-
-class NewsCrawler:
-
-    soup: BeautifulSoup = None
-    base_url: str = None
-
     def __init__(self, base_url):
-        self.base_url = base_url
-        headers = Config.header
-
-        req = ulib_request.Request(url=base_url,headers=headers,method="GET") 
-        html = ulib_request.urlopen(req).read().decode('utf-8')
-        self.soup = BeautifulSoup(html, 'html.parser')
+        super().__init__(base_url)
     
     def parse_articles(self):
         news_articles = self.soup.find("ol", {"data-category-key": "ACTIVITY"})
