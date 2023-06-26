@@ -8,8 +8,12 @@ from typing import List
 from elasticsearch import Elasticsearch
 from loguru import logger
 
-from config import Config, ElasticSearchConfig
-import util
+import sys, os
+#run from repo root for now
+sys.path.insert(1, os.getcwd())
+
+from crawler.util.config import Config, ElasticSearchConfig
+from crawler.util import util
 
 es_client = Elasticsearch(ElasticSearchConfig.ES_SERVER_URL)
 
