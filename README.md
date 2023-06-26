@@ -4,6 +4,7 @@
 * Auto saves the images and articles locally
 * Indexes to ES following the arknights news mapping
 * Visualizes with Kibana Dashboard
+* Quick set up of ES and Kibana refer to https://github.com/deviantony/docker-elk
 
 ### Arknights News Mapping
 ```
