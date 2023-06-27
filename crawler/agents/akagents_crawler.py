@@ -1,11 +1,9 @@
-import urllib.request as ulib_request
 import urllib.parse as ulib_parse
 import json
 
-from bs4 import BeautifulSoup
 from bs4.element import Tag as htmlTag
 from datetime import datetime
-from typing import List, Dict
+from typing import List
 from elasticsearch import Elasticsearch
 from loguru import logger
 
@@ -13,25 +11,48 @@ import sys, os
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.util.config import Config, ElasticSearchConfig
+from crawler.util.config import ElasticSearchConfig
 from crawler.util import util
 from crawler.crawler import Crawler
 
 es_client = Elasticsearch(ElasticSearchConfig.ES_SERVER_URL)
 
-attr_lookup_table = {
-    "职业": "agent_class",
-    "星级": "star",
-    "阵营": "faction",
-    "性别": "gender",
-    "画师": "drawer",
-    "CV列表": "cv_list",
-    "干员编号": "agent_number",
-    "特性": "ability",
-    "标签": "tag",
-    "实装日期": "release_date",
-    "获取途径": "obtain"
-}
+class AgentSpec:
+    
+    class WrongSpecsException(Exception):
+
+        def __init__(): pass
+
+    class Spec:
+        """
+        Spec shoud take in a list of 5 elements
+        Each represent a different level
+        """
+        def __init__(self, specs: list):
+            
+            if len(specs) != 5: raise AgentSpec.WrongSpecsException()
+            
+            self.initial = specs[0]
+            self.initial_max = specs[1]
+            self.e1_max = specs[2]
+            self.e2_max = specs[3]
+            self.boost = specs[4]
+
+    def __init__(self, **kwargs):
+        self.health = vars(self.Spec(kwargs["health"]))
+        self.attack = vars(self.Spec(kwargs["attack"]))
+        self.defense = vars(self.Spec(kwargs["defense"]))
+        self.resistance = vars(self.Spec(kwargs["resistance"]))
+
+class AgentUtil:
+
+    def __init__(self, **kwargs):
+        self.block = kwargs["block"]
+        self.cost = kwargs["cost"]
+        self.attack_speed = kwargs["attack_speed"]
+        self.attack_interval = kwargs["attack_interval"]
+        self.cooldown = kwargs["cooldown"]
+        self.max_cost = kwargs["max_cost"]
 
 class Agent:
 
@@ -42,44 +63,83 @@ class Agent:
         self.agent_class: str = kwargs["agent_class"]
         self.faction: str = kwargs["faction"]
         self.gender: str = kwargs["gender"]
-        self.race: str = kwargs["race"]
         self.drawer: str = kwargs["drawer"]
         self.cv_list: str = kwargs["cv_list"]
-        self.agent_number = kwargs["agent_number"]
-        self.ability = kwargs["ability"]
-        self.tag = kwargs["tag"]
-        self.release_date = kwargs["release_date"]
-        self.obtain = kwargs["obtain"]
-        self.profile = kwargs["profile"]
-        self.experience = kwargs["experience"]
+        self.agent_number: str = kwargs["agent_number"]
+        self.ability: str = kwargs["ability"]
+        self.tag: str = kwargs["tag"]
+        self.release_date: str = kwargs["release_date"]
+        self.obtain: str = kwargs["obtain"]
+        self.profile: str = kwargs["profile"]
+        self.experience: str = kwargs["experience"]
+        self.e1_upgrades: str = kwargs["e1_upgrades"]
+        self.e2_upgrades: str = kwargs["e2_upgrades"]
 
+    def set_agent_util(self, agent_util: AgentUtil):
+        self.agent_util = vars(agent_util)
+    
+    def set_agent_spec(self, agent_spec: AgentSpec):
+        self.agent_spec = vars(agent_spec)
+
+    def save(self):
+        doc = vars(self)
+        doc.update({"created": datetime.now()})
+        es_client.index(index="arknights-agents", document=doc)
+        logger.debug(f"Saved {doc} to ES \n\n")
+        
 class AgentInfoCrawler(Crawler):
     
     def __init__(self, base_url):
         super().__init__(base_url)
     
-    def set_agent_attr(self, info_dict: dict):
+    @staticmethod
+    def create_dict(table: List[htmlTag]):
+        """Create a dict with key value pair from th td html tag pair"""
+        ret = {}
+
+        for tr in table:
+            curkey, curval = None, None
+            for row in tr:
+                if(row.name == "th"): curkey = row.text.replace("\n", "")
+                if(row.name == "td" and curkey in util.attr_lookup_table): 
+                    curval = row.text.replace("\n", "")
+                    ret.update({
+                        util.attr_lookup_table[curkey]: curval
+                    })
+        
+        return ret
+    
+    def get_spec_dict(self, spec_table: List[htmlTag]):
+        spec_dict = {}
+
+        for row in spec_table:
+            td_list = row.find_all("td")
+            for index, td in enumerate(td_list):
+                spec_name = td.text.replace("\n", "")
+                if spec_name in util.attr_lookup_table:
+                    specs = [tag.text.replace("\n", "") for tag in td_list[index+1: index+6]]
+                    spec_dict.update({util.attr_lookup_table[spec_name]: specs})
+        
+        return spec_dict
+
+    def get_agent_us(self) -> tuple[AgentUtil, AgentSpec]:
+        """stands for get agent util and spec"""
         attr_tables = self.soup.find_all("table", {
             "class": "wikitable",
-            "style": "display:none;width:100%"
+            "style": "text-align:center;width:100%"
         })
 
         util_table = attr_tables[0].find("tbody").find_all("tr")
         spec_table = attr_tables[1].find("tbody").find_all("tr")
 
-        for row in util_table:
-            print(row, "\n\n")
+        # create agent util dict from html table
+        agent_util = AgentUtil(**(AgentInfoCrawler.create_dict(util_table)))
+        spec_dict = self.get_spec_dict(spec_table)
+        agent_spec = AgentSpec(**spec_dict)
+        
+        return agent_util, agent_spec
 
-        print("Now at spec table")
-
-        for row in spec_table:
-            print(row, "\n\n")
-
-        return info_dict
-
-    def get_agent_info(self):
-        info_dict = {}
-
+    def get_agent_info(self, agent_name, agent_avatar, save=False):
         # get agent basic info from the profile tables
         basic_info_table: List[htmlTag] = self.soup.find("table",{
             "class": "wikitable",
@@ -87,31 +147,44 @@ class AgentInfoCrawler(Crawler):
         }).find("tbody").find_all("tr")
 
         # update info dict by all basic info parsed
-        for tr in basic_info_table:
-            curkey, curval = None, None
-            for row in tr:
-                if(row.name == "th"): curkey = row.text.replace("\n", "")
-                if(row.name == "td" and curkey in attr_lookup_table): 
-                    curval = row.text.replace("\n", "")
-                    info_dict.update({
-                        attr_lookup_table[curkey]: curval
-                    })
-        
+        agent_dict = AgentInfoCrawler.create_dict(basic_info_table)
+        agent_dict.update({"name": agent_name})
+        agent_dict.update({"avatar": agent_avatar})
+
         # update profile section
         profile = self.soup.find("td", {"style": "padding:5px 0px 0px 0px;text-align:left;line-height:24px"}).text
         profile = profile.replace("\n", "").replace("】", ":").replace("【", "\n")
-        info_dict.update({"profile": profile})
+        agent_dict.update({"profile": profile})
 
         # update exp section
         experience = self.soup.find("td", {"style": "padding:5px 0px 0px 5px;text-align:left;line-height:24px"}).text
-        info_dict.update({"experience": experience})
+        agent_dict.update({"experience": experience})
 
-        info_dict = self.set_agent_attr(info_dict)
+        # update agent util and specs
+        agent_util, agent_spec = self.get_agent_us()
+        
+        # update agent e1 e2 upgrades
+        upgrades = self.soup.find_all("td", {
+            "style": "text-align:left",
+            "colspan": "2"
+        })
 
+        e1_upgrades = upgrades[0].text
+        e2_upgrades = upgrades[1].text
+
+        agent_dict.update({"e1_upgrades": e1_upgrades})
+        agent_dict.update({"e2_upgrades": e2_upgrades})
+
+        agent = Agent(**agent_dict)
+        agent.set_agent_spec(agent_spec)
+        agent.set_agent_util(agent_util)
+        if save: agent.save()
+        
+        #TODO DEBUG
+        with open(f"./temp/result/{agent_name}.json", "w+") as res:
+            res.write(json.dumps(vars(agent), sort_keys=True, indent=4))
 
 class AgentCrawler(Crawler):
-    
-    agents: List[Dict[str, List[Agent]]] = []
 
     def __init__(self, base_url):
         super().__init__(base_url)
@@ -124,23 +197,18 @@ class AgentCrawler(Crawler):
             agent_page_url = "https://wiki.biligame.com/arknights/"+agent_name
             encoded_url = ulib_parse.quote(agent_page_url, safe=':/?=&')
             infoCrawler = AgentInfoCrawler(encoded_url)
-            infoCrawler.get_agent_info()
-            break #TODO DEBUG
+            infoCrawler.get_agent_info(agent_name, agent_avatar, save=False)
             
-    def get_agent_list(self):
+    def parse_agent_list(self):
         agent_tabs: htmlTag = self.soup.find("div", {"class": "resp-tabs-container"})
 
         for tab in agent_tabs:
             if(isinstance(tab, htmlTag)):
                 tab_agents = tab.find_all("div", {"class": "handbook-item-container"})
                 self.parse_agent(tab_agents)
-                break #TODO DEBUG
-    
-    def parse_agents(self):
-        pass
 
     def crawl(self):
-        self.get_agent_list()
+        self.parse_agent_list()
 
 if __name__ == "__main__":
     akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
