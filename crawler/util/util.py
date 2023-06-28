@@ -5,6 +5,7 @@ attr_lookup_table = {
     "星级": "star",
     "阵营": "faction",
     "性别": "gender",
+    "设定性别": "gender",
     "画师": "drawer",
     "CV列表": "cv_list",
     "干员编号": "agent_number",

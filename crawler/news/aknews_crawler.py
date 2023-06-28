@@ -23,12 +23,12 @@ class Content:
     image_url: str | None = None
     text_list: List[str | None] = []
 
-    def __init__(self, content_id, image_url, texts):
+    def __init__(self, content_id, image_url, texts, download=False):
         self.content_id = content_id
         self.image_url = image_url
         self.text_list = texts
 
-        util.download_image(image_url, "./temp/images")
+        if download: util.download_image(image_url, "./temp/images")
 
     def __str__(self):
         return f"{'='*20} Content image: {self.image_url} {'='*20} \n {'='*20} Content text: {self.text_list} {'='*20}"
@@ -53,7 +53,7 @@ class Article:
         html = ulib_request.urlopen(req).read().decode('utf-8')
         self.soup = BeautifulSoup(html, 'html.parser')
     
-    def parse_content(self):
+    def parse_content(self, download=False):
 
         article_container = self.soup.find("div", {"class": "article-content"})
 
@@ -86,19 +86,19 @@ class Article:
             if text: texts.append(text)
             
             if cur_image and prev_image:
-                segment = Content(content_id=index, image_url=prev_image, texts=texts)
+                segment = Content(content_id=index, image_url=prev_image, texts=texts, download=download)
                 self.content.append(segment)
                 texts = []
             
             if cur_image and not prev_image and texts:
                 # meaning we have a text segment at the top
-                segment = Content(content_id=index, image_url=None, texts=texts)
+                segment = Content(content_id=index, image_url=None, texts=texts, download=download)
                 self.content.append(segment)
                 texts = []
 
             if cur_image: prev_image = cur_image
         
-        segment = Content(content_id=index, image_url=prev_image, texts=texts)
+        segment = Content(content_id=index, image_url=prev_image, texts=texts, download=download)
         self.content.append(segment)
 
     def save(self, article_id):
@@ -132,7 +132,7 @@ class NewsCrawler(Crawler):
             url: str = self.base_url + href["href"].split("/")[-1]
             
             article = Article(date=date.text, url=url, title=title.text)
-            article.parse_content()
+            article.parse_content(download=False)
             article.save(index)
 
 if __name__ == "__main__":

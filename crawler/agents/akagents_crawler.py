@@ -74,6 +74,7 @@ class Agent:
         self.experience: str = kwargs["experience"]
         self.e1_upgrades: str = kwargs["e1_upgrades"]
         self.e2_upgrades: str = kwargs["e2_upgrades"]
+        self.mod: str = kwargs["mod"]
 
     def set_agent_util(self, agent_util: AgentUtil):
         self.agent_util = vars(agent_util)
@@ -170,19 +171,24 @@ class AgentInfoCrawler(Crawler):
         })
 
         e1_upgrades = upgrades[0].text
-        e2_upgrades = upgrades[1].text
+        e2_upgrades = "not avaliable"
+
+        # check if an agent has an e2 upgrade
+        if len(upgrades) >= 2: e2_upgrades = upgrades[1].text
 
         agent_dict.update({"e1_upgrades": e1_upgrades})
         agent_dict.update({"e2_upgrades": e2_upgrades})
+        
+        # get mod info
+        mod = self.soup.find("div", {
+            "style": "width:80%;padding:5px;background-color:#e1e1e1;display: flex;align-items: center;"
+        }).text
+        agent_dict.update({"mod": mod})
 
         agent = Agent(**agent_dict)
         agent.set_agent_spec(agent_spec)
         agent.set_agent_util(agent_util)
         if save: agent.save()
-        
-        #TODO DEBUG
-        with open(f"./temp/result/{agent_name}.json", "w+") as res:
-            res.write(json.dumps(vars(agent), sort_keys=True, indent=4))
 
 class AgentCrawler(Crawler):
 
@@ -197,7 +203,7 @@ class AgentCrawler(Crawler):
             agent_page_url = "https://wiki.biligame.com/arknights/"+agent_name
             encoded_url = ulib_parse.quote(agent_page_url, safe=':/?=&')
             infoCrawler = AgentInfoCrawler(encoded_url)
-            infoCrawler.get_agent_info(agent_name, agent_avatar, save=False)
+            infoCrawler.get_agent_info(agent_name, agent_avatar, save=True)
             
     def parse_agent_list(self):
         agent_tabs: htmlTag = self.soup.find("div", {"class": "resp-tabs-container"})
