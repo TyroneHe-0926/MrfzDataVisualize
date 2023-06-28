@@ -8,11 +8,11 @@
 
 ### Arknights News Mapping
 
-[NewsMapping.MD](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/crawler/news/README.md)
+[NewsMapping.md](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/crawler/news/README.md)
 
 ### Arknights Agents Mapping
 
-[AgentsMapping.MD](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/crawler/agents/README.md)
+[AgentsMapping.md](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/crawler/agents/README.md)
 
 ### Sample News Dashboard
 
@@ -21,7 +21,5 @@
 ### Sample Agent Info Dashboards
 
 ![Dashboard Screenshot](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/assets/agents-info-dashboard-1.jpeg?raw=true)
-
-`------`
 
 ![Dashboard Screenshot](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/assets/agents-info-dashboard-2.jpeg?raw=true)
