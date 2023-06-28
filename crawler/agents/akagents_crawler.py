@@ -47,34 +47,14 @@ class AgentSpec:
 class AgentUtil:
 
     def __init__(self, **kwargs):
-        self.block = kwargs["block"]
-        self.cost = kwargs["cost"]
-        self.attack_speed = kwargs["attack_speed"]
-        self.attack_interval = kwargs["attack_interval"]
-        self.cooldown = kwargs["cooldown"]
-        self.max_cost = kwargs["max_cost"]
+        for key, val in kwargs.items():
+            setattr(self, key, val)
 
 class Agent:
 
     def __init__(self, **kwargs):
-        self.name: str = kwargs["name"]
-        self.avatar: str = kwargs["avatar"]
-        self.star: int = kwargs["star"]
-        self.agent_class: str = kwargs["agent_class"]
-        self.faction: str = kwargs["faction"]
-        self.gender: str = kwargs["gender"]
-        self.drawer: str = kwargs["drawer"]
-        self.cv_list: str = kwargs["cv_list"]
-        self.agent_number: str = kwargs["agent_number"]
-        self.ability: str = kwargs["ability"]
-        self.tag: str = kwargs["tag"]
-        self.release_date: str = kwargs["release_date"]
-        self.obtain: str = kwargs["obtain"]
-        self.profile: str = kwargs["profile"]
-        self.experience: str = kwargs["experience"]
-        self.e1_upgrades: str = kwargs["e1_upgrades"]
-        self.e2_upgrades: str = kwargs["e2_upgrades"]
-        self.mod: str = kwargs["mod"]
+        for key, val in kwargs.items():
+            setattr(self, key, val)
 
     def set_agent_util(self, agent_util: AgentUtil):
         self.agent_util = vars(agent_util)
