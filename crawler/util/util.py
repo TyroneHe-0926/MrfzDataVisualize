@@ -1,4 +1,5 @@
 import os
+import json
 
 attr_lookup_table = {
     "职业": "agent_class",
@@ -63,3 +64,6 @@ def get_news_mock():
 
     return mock_data
 
+def save_json(path, content):
+    with open(path, "w+") as fp:
+        fp.write(json.dumps(content, sort_keys=True, indent=4))
