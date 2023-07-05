@@ -23,3 +23,9 @@
 ![Dashboard Screenshot](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/assets/agents-info-dashboard-1.jpeg?raw=true)
 
 ![Dashboard Screenshot](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/assets/agents-info-dashboard-2.jpeg?raw=true)
+
+### Sample Agent Spec Dashboards
+
+![Dashboard Screenshot](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/assets/agents-spec-dashboard-1.jpeg?raw=true)
+
+![Dashboard Screenshot](https://github.com/TyroneHe-0926/MrfzDataVisualize/blob/main/assets/agents-spec-dashboard-2.jpeg?raw=true)
