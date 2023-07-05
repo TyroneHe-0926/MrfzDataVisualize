@@ -4,3 +4,4 @@ requests
 elasticsearch
 elasticsearch_dsl
 loguru
+click
