@@ -65,5 +65,7 @@ def get_news_mock():
     return mock_data
 
 def save_json(path, content):
+    if not os.path.exists(path): os.makedirs(path)
+    
     with open(path, "w+") as fp:
         fp.write(json.dumps(content, sort_keys=True, indent=4))
