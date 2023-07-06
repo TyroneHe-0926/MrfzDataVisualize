@@ -134,7 +134,8 @@ class NewsCrawler(Crawler):
             article = Article(date=date.text, url=url, title=title.text)
             article.parse_content(download=save_img)
             
-            article.save(index) if mode =="prod" else util.save_json(f"./temp/{title}.json", vars(article))
+            if mode == "prod": article.save(index)
+            if mode == "dev": util.save_json(f"./temp/{title}.json", vars(article))
 
 def run(mode="prod", save_img=False):
     akurl = "https://ak.hypergryph.com/news/"

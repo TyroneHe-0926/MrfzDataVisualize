@@ -16,6 +16,7 @@ from crawler.util import util
 from crawler.crawler import Crawler
 
 es_client = Elasticsearch(ElasticSearchConfig.ES_SERVER_URL)
+MODE, SAVE_IMG = None, None
 
 class AgentSpec:
     
@@ -120,7 +121,7 @@ class AgentInfoCrawler(Crawler):
         
         return agent_util, agent_spec
 
-    def get_agent_info(self, agent_name, agent_avatar, save=False):
+    def get_agent_info(self, agent_name, agent_avatar):
         # get agent basic info from the profile tables
         basic_info_table: List[htmlTag] = self.soup.find("table",{
             "class": "wikitable",
@@ -168,7 +169,8 @@ class AgentInfoCrawler(Crawler):
         agent = Agent(**agent_dict)
         agent.set_agent_spec(agent_spec)
         agent.set_agent_util(agent_util)
-        if save: agent.save()
+        if MODE == "prod": agent.save()
+        if MODE == "dev": util.save_json(f"./temp/{agent_name}.json", vars(agent))
 
 class AgentCrawler(Crawler):
 
@@ -179,11 +181,13 @@ class AgentCrawler(Crawler):
         for agent_tab in agent_tabs:
             agent_name = agent_tab.find("p", {"class": "handbook-item-name"}).text
             agent_avatar = agent_tab.find("img", {"alt": agent_name}).get("src")
+
+            if SAVE_IMG: util.download_image(agent_avatar, "./temp/images")
            
             agent_page_url = "https://wiki.biligame.com/arknights/"+agent_name
             encoded_url = ulib_parse.quote(agent_page_url, safe=':/?=&')
             infoCrawler = AgentInfoCrawler(encoded_url)
-            infoCrawler.get_agent_info(agent_name, agent_avatar, save=True)
+            infoCrawler.get_agent_info(agent_name, agent_avatar)
             
     def parse_agent_list(self):
         agent_tabs: htmlTag = self.soup.find("div", {"class": "resp-tabs-container"})
@@ -196,8 +200,8 @@ class AgentCrawler(Crawler):
     def crawl(self):
         self.parse_agent_list()
 
-if __name__ == "__main__":
+def run(mode="prod", save_img=False):
     akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
-
+    MODE, SAVE_IMG = mode, save_img
     agentCrawler = AgentCrawler(base_url=akurl)
     agentCrawler.crawl()

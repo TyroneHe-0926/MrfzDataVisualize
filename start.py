@@ -7,7 +7,9 @@ from crawler.agents import akagents_crawler
 @click.option("--save_img", default=False, help="download image locally (true/false)")
 @click.argument("runner")
 def main(mode, save_img, runner) -> None:
-    pass
+    if runner == "agent": akagents_crawler.run(mode=mode, save_img=save_img)
+
+    if runner == "news": aknews_crawler.run(mode=mode, save_img=save_img)
 
 if __name__ == "__main__":
     print(f"{'='*10} Currently Supported Runners: agent/news {'='*10}")
