@@ -7,6 +7,8 @@ class Config:
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36"
     }
 
+    MODE, SAVE_IMG = None, None
+
 class ElasticSearchConfig:
     ES_SERVER_PORT = "9200"
     ES_USERNAME = "elastic"

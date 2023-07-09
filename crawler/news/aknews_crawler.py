@@ -132,12 +132,14 @@ class NewsCrawler(Crawler):
             url: str = self.base_url + href["href"].split("/")[-1]
             
             article = Article(date=date.text, url=url, title=title.text)
-            article.parse_content(download=False)
-            article.save(index)
+            article.parse_content(download=Config.SAVE_IMG)
+            
+            if Config.MODE == "prod": article.save(index)
+            if Config.MODE == "dev": util.save_json(f"./temp/{title}.json", vars(article))
 
-if __name__ == "__main__":
+def run():
+    logger.info("Running News Crawler")
 
     akurl = "https://ak.hypergryph.com/news/"
-
     news_crawler = NewsCrawler(base_url=akurl)
     news_crawler.parse_articles()

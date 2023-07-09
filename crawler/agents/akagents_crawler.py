@@ -11,7 +11,7 @@ import sys, os
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.util.config import ElasticSearchConfig
+from crawler.util.config import ElasticSearchConfig, Config
 from crawler.util import util
 from crawler.crawler import Crawler
 
@@ -120,7 +120,7 @@ class AgentInfoCrawler(Crawler):
         
         return agent_util, agent_spec
 
-    def get_agent_info(self, agent_name, agent_avatar, save=False):
+    def get_agent_info(self, agent_name, agent_avatar):
         # get agent basic info from the profile tables
         basic_info_table: List[htmlTag] = self.soup.find("table",{
             "class": "wikitable",
@@ -168,7 +168,8 @@ class AgentInfoCrawler(Crawler):
         agent = Agent(**agent_dict)
         agent.set_agent_spec(agent_spec)
         agent.set_agent_util(agent_util)
-        if save: agent.save()
+        if Config.MODE == "prod": agent.save()
+        if Config.MODE == "dev": util.save_json(f"./temp/{agent_name}.json", vars(agent))
 
 class AgentCrawler(Crawler):
 
@@ -179,11 +180,13 @@ class AgentCrawler(Crawler):
         for agent_tab in agent_tabs:
             agent_name = agent_tab.find("p", {"class": "handbook-item-name"}).text
             agent_avatar = agent_tab.find("img", {"alt": agent_name}).get("src")
+
+            if Config.SAVE_IMG: util.download_image(agent_avatar, "./temp/images")
            
             agent_page_url = "https://wiki.biligame.com/arknights/"+agent_name
             encoded_url = ulib_parse.quote(agent_page_url, safe=':/?=&')
             infoCrawler = AgentInfoCrawler(encoded_url)
-            infoCrawler.get_agent_info(agent_name, agent_avatar, save=True)
+            infoCrawler.get_agent_info(agent_name, agent_avatar)
             
     def parse_agent_list(self):
         agent_tabs: htmlTag = self.soup.find("div", {"class": "resp-tabs-container"})
@@ -196,8 +199,9 @@ class AgentCrawler(Crawler):
     def crawl(self):
         self.parse_agent_list()
 
-if __name__ == "__main__":
-    akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
+def run():
+    logger.info("Running Agents Crawler")
 
+    akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
     agentCrawler = AgentCrawler(base_url=akurl)
     agentCrawler.crawl()
