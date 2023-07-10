@@ -1,10 +1,11 @@
 ## MrfzDataVisualize
 
-- The arknights_crawler gets the released arknights news up untill 2023.6.25.
-- Auto saves the images and articles locally
-- Indexes to ES following the arknights news mapping
-- Visualizes with Kibana Dashboard
-- Quick set up of ES and Kibana refer to https://github.com/deviantony/docker-elk
+- Currently supports Arknights agents and news Kibana dashboard for data visiualizing
+- Supports saving the images and data locally as well
+
+### Setup
+
+### Get started
 
 ### Arknights News Mapping
 
