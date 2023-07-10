@@ -199,9 +199,10 @@ class AgentCrawler(Crawler):
     def crawl(self):
         self.parse_agent_list()
 
-def run():
-    logger.info("Running Agents Crawler")
+def run(task):
+    if task == "crawl":
+        logger.info("Running Agents Crawler")
 
-    akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
-    agentCrawler = AgentCrawler(base_url=akurl)
-    agentCrawler.crawl()
+        akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
+        agentCrawler = AgentCrawler(base_url=akurl)
+        agentCrawler.crawl()

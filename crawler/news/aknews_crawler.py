@@ -102,9 +102,15 @@ class Article:
         self.content.append(segment)
 
     def save(self, article_id):
+        doc = self.to_json(article_id=article_id)
+        doc.update({"created": datetime.now()})
+
+        es_client.index(index="arknights-news", document=doc)
+        logger.debug(f"Saved {doc} to ES")
+    
+    def to_json(self, article_id):
         contents = [vars(item) for item in self.content]
-        doc = {
-            "created": datetime.now(),
+        return {
             "article_id": article_id,
             "title": self.title,
             "page_url": self.page_url,
@@ -112,9 +118,6 @@ class Article:
             "content": contents
         }
 
-        es_client.index(index="arknights-news", document=doc)
-        logger.debug(f"Saved {doc} to ES")
-    
     def __str__(self): return json.dumps(self.__dict__)
 
 class NewsCrawler(Crawler):
@@ -135,11 +138,13 @@ class NewsCrawler(Crawler):
             article.parse_content(download=Config.SAVE_IMG)
             
             if Config.MODE == "prod": article.save(index)
-            if Config.MODE == "dev": util.save_json(f"./temp/{title}.json", vars(article))
+            if Config.MODE == "dev": 
+                util.save_json(f"./temp/article_{index}.json", article.to_json(index))
 
-def run():
-    logger.info("Running News Crawler")
+def run(task):
+    if task == "crawl":
+        logger.info("Running News Crawler")
 
-    akurl = "https://ak.hypergryph.com/news/"
-    news_crawler = NewsCrawler(base_url=akurl)
-    news_crawler.parse_articles()
+        akurl = "https://ak.hypergryph.com/news/"
+        news_crawler = NewsCrawler(base_url=akurl)
+        news_crawler.parse_articles()
