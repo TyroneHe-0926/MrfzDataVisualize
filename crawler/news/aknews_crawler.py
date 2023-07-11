@@ -11,7 +11,7 @@ import sys, os
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.crawler import Crawler
+from crawler.crawler import Crawler, Task
 from crawler.util.config import ElasticSearchConfig, Config
 from crawler.util import util
 
@@ -28,7 +28,7 @@ class Content:
         self.image_url = image_url
         self.text_list = texts
 
-        if download: util.download_image(image_url, "./temp/images")
+        if download: util.download_image(image_url, "./temp/images/news")
 
     def __str__(self):
         return f"{'='*20} Content image: {self.image_url} {'='*20} \n {'='*20} Content text: {self.text_list} {'='*20}"
@@ -125,7 +125,7 @@ class NewsCrawler(Crawler):
     def __init__(self, base_url):
         super().__init__(base_url)
     
-    def parse_articles(self):
+    def parse_articles(self, mode, save_img):
         news_articles = self.soup.find("ol", {"data-category-key": "ACTIVITY"})
         
         for index, child_node in enumerate(news_articles):
@@ -135,16 +135,16 @@ class NewsCrawler(Crawler):
             url: str = self.base_url + href["href"].split("/")[-1]
             
             article = Article(date=date.text, url=url, title=title.text)
-            article.parse_content(download=Config.SAVE_IMG)
+            article.parse_content(download=save_img)
             
-            if Config.MODE == "prod": article.save(index)
-            if Config.MODE == "dev": 
-                util.save_json(f"./temp/article_{index}.json", article.to_json(index))
+            if mode == "prod": article.save(index)
+            if mode == "dev": 
+                util.save_json(f"./temp/news/article_{index}.json", article.to_json(index))
 
-def run(task):
-    if task == "crawl":
+def dispatch(task: Task):
+    if task.name == "crawl":
         logger.info("Running News Crawler")
 
         akurl = "https://ak.hypergryph.com/news/"
         news_crawler = NewsCrawler(base_url=akurl)
-        news_crawler.parse_articles()
+        news_crawler.parse_articles(mode=task.mode, save_img=task.save_img)

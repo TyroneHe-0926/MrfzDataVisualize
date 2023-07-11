@@ -1,8 +1,8 @@
 import click
 
-from crawler.util.config import Config
 from crawler.news import aknews_crawler
 from crawler.agents import akagents_crawler
+from crawler.crawler import Task
 
 def get_runner(runner: str):
     runners = {
@@ -18,12 +18,16 @@ def get_runner(runner: str):
 @click.option("--task", default="crawl", help="runner task (crawl/sync)")
 @click.argument("runner")
 def main(mode: str, save_img: bool, runner: str, task: str) -> None:
-
-    Config.MODE = mode
-    Config.SAVE_IMG = save_img
     
     _runner = get_runner(runner)
-    _runner.run(task)
+
+    task = Task(
+        name = task,
+        mode=mode,
+        save_img=save_img
+    )
+
+    _runner.dispatch(task)
 
 if __name__ == "__main__":
     print(f"{'='*10} Currently Supported Runners: agent/news {'='*10}")
