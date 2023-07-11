@@ -17,7 +17,7 @@ def get_runner(runner: str):
 @click.option("--save_img", default=False, help="download image locally (true/false)")
 @click.option("--task", default="crawl", help="runner task (crawl/sync)")
 @click.argument("runner")
-def main(mode: str, save_img: bool, runner: str, task: str) -> None:
+def main(mode: str, save_img: bool, task: str, runner: str) -> None:
     
     _runner = get_runner(runner)
 

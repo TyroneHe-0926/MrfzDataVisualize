@@ -17,7 +17,7 @@ class Task(BaseModel):
         return {
             "mode": self.mode,
             "save_img": self.save_img,
-            "task": self.name
+            "name": self.name
         }
 
 class Crawler:
