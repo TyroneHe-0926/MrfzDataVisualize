@@ -1,5 +1,4 @@
 import urllib.parse as ulib_parse
-import json
 
 from bs4.element import Tag as htmlTag
 from datetime import datetime
@@ -11,9 +10,9 @@ import sys, os
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.util.config import ElasticSearchConfig, Config
+from crawler.util.config import ElasticSearchConfig
 from crawler.util import util
-from crawler.crawler import Crawler
+from crawler.crawler import Crawler, Task
 
 es_client = Elasticsearch(ElasticSearchConfig.ES_SERVER_URL)
 
@@ -120,7 +119,7 @@ class AgentInfoCrawler(Crawler):
         
         return agent_util, agent_spec
 
-    def get_agent_info(self, agent_name, agent_avatar):
+    def get_agent_info(self, agent_name, agent_avatar, mode):
         # get agent basic info from the profile tables
         basic_info_table: List[htmlTag] = self.soup.find("table",{
             "class": "wikitable",
@@ -168,40 +167,46 @@ class AgentInfoCrawler(Crawler):
         agent = Agent(**agent_dict)
         agent.set_agent_spec(agent_spec)
         agent.set_agent_util(agent_util)
-        if Config.MODE == "prod": agent.save()
-        if Config.MODE == "dev": util.save_json(f"./temp/{agent_name}.json", vars(agent))
+        if mode == "prod": agent.save()
+        if mode == "dev": util.save_json(f"./temp/agents/{agent_name}.json", vars(agent))
 
 class AgentCrawler(Crawler):
 
     def __init__(self, base_url):
         super().__init__(base_url)
         
-    def parse_agent(self, agent_tabs: List[htmlTag]):
+    def parse_agent(self, agent_tabs: List[htmlTag], **task):
         for agent_tab in agent_tabs:
             agent_name = agent_tab.find("p", {"class": "handbook-item-name"}).text
+
+            if task["name"] == "sync":
+                if es_client.search(index="arknights-agents", query={
+                    "match": { "name.keyword": agent_name }
+                })["hits"]["total"]["value"] > 0: 
+                    logger.info(f"Agent {agent_name} hit, skipping")
+                    continue
+            
             agent_avatar = agent_tab.find("img", {"alt": agent_name}).get("src")
 
-            if Config.SAVE_IMG: util.download_image(agent_avatar, "./temp/images")
+            if task["save_img"]: util.download_image(agent_avatar, "./temp/images/agents")
            
             agent_page_url = "https://wiki.biligame.com/arknights/"+agent_name
             encoded_url = ulib_parse.quote(agent_page_url, safe=':/?=&')
             infoCrawler = AgentInfoCrawler(encoded_url)
-            infoCrawler.get_agent_info(agent_name, agent_avatar)
+            infoCrawler.get_agent_info(agent_name, agent_avatar, task["mode"])
             
-    def parse_agent_list(self):
+    def parse_agent_list(self, **task):
         agent_tabs: htmlTag = self.soup.find("div", {"class": "resp-tabs-container"})
 
         for tab in agent_tabs:
             if(isinstance(tab, htmlTag)):
                 tab_agents = tab.find_all("div", {"class": "handbook-item-container"})
-                self.parse_agent(tab_agents)
+                self.parse_agent(tab_agents, **task)
 
-    def crawl(self):
-        self.parse_agent_list()
-
-def run():
-    logger.info("Running Agents Crawler")
-
+def dispatch(task: Task):
     akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
     agentCrawler = AgentCrawler(base_url=akurl)
-    agentCrawler.crawl()
+
+    logger.info(f"Running Agents {task.name}")
+
+    agentCrawler.parse_agent_list(**task.json())

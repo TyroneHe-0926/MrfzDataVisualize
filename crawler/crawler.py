@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from pydantic import BaseModel
 import urllib.request as ulib_request
 
 import sys, os
@@ -6,6 +7,18 @@ import sys, os
 sys.path.insert(1, os.getcwd())
 
 from crawler.util.config import Config
+
+class Task(BaseModel):
+    name: str
+    mode: str
+    save_img: bool
+
+    def json(self):
+        return {
+            "mode": self.mode,
+            "save_img": self.save_img,
+            "name": self.name
+        }
 
 class Crawler:
     

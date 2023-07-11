@@ -8,10 +8,12 @@ from elasticsearch import Elasticsearch
 from loguru import logger
 
 import sys, os
+import uuid
+from hashlib import md5
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.crawler import Crawler
+from crawler.crawler import Crawler, Task
 from crawler.util.config import ElasticSearchConfig, Config
 from crawler.util import util
 
@@ -28,7 +30,7 @@ class Content:
         self.image_url = image_url
         self.text_list = texts
 
-        if download: util.download_image(image_url, "./temp/images")
+        if download: util.download_image(image_url, "./temp/images/news")
 
     def __str__(self):
         return f"{'='*20} Content image: {self.image_url} {'='*20} \n {'='*20} Content text: {self.text_list} {'='*20}"
@@ -102,9 +104,15 @@ class Article:
         self.content.append(segment)
 
     def save(self, article_id):
+        doc = self.to_json(article_id=article_id)
+        doc.update({"created": datetime.now()})
+
+        es_client.index(index="arknights-news", document=doc)
+        logger.debug(f"Saved {doc} to ES")
+    
+    def to_json(self, article_id):
         contents = [vars(item) for item in self.content]
-        doc = {
-            "created": datetime.now(),
+        return {
             "article_id": article_id,
             "title": self.title,
             "page_url": self.page_url,
@@ -112,9 +120,6 @@ class Article:
             "content": contents
         }
 
-        es_client.index(index="arknights-news", document=doc)
-        logger.debug(f"Saved {doc} to ES")
-    
     def __str__(self): return json.dumps(self.__dict__)
 
 class NewsCrawler(Crawler):
@@ -122,24 +127,34 @@ class NewsCrawler(Crawler):
     def __init__(self, base_url):
         super().__init__(base_url)
     
-    def parse_articles(self):
+    def parse_articles(self, **task):
         news_articles = self.soup.find("ol", {"data-category-key": "ACTIVITY"})
         
-        for index, child_node in enumerate(news_articles):
+        for _, child_node in enumerate(news_articles):
             date: htmlTag = child_node.find("span", {"class": "articleItemDate"})
             href: htmlTag = child_node.find("a", {"class": "articleItemLink"})
             title: htmlTag = child_node.find("h1", {"class": "articleItemTitle"})
             url: str = self.base_url + href["href"].split("/")[-1]
+            article_id: str = md5(url.encode("utf-8")).hexdigest()
+
+            if task["name"] == "sync":
+                if es_client.search(index="arknights-news", query={
+                    "match": { "article_id.keyword": article_id }
+                })["hits"]["total"]["value"] > 0: 
+                    logger.info(f"Article {article_id} hit, skipping")
+                    continue
             
             article = Article(date=date.text, url=url, title=title.text)
-            article.parse_content(download=Config.SAVE_IMG)
+            article.parse_content(download=task["save_img"])
             
-            if Config.MODE == "prod": article.save(index)
-            if Config.MODE == "dev": util.save_json(f"./temp/{title}.json", vars(article))
+            if task["mode"] == "prod": article.save(article_id)
+            if task["mode"] == "dev": 
+                util.save_json(f"./temp/news/article_{uuid.uuid4()}.json", article.to_json(article_id))
 
-def run():
-    logger.info("Running News Crawler")
-
+def dispatch(task: Task):
     akurl = "https://ak.hypergryph.com/news/"
     news_crawler = NewsCrawler(base_url=akurl)
-    news_crawler.parse_articles()
+
+    logger.info(f"Running News {task.name}")
+
+    news_crawler.parse_articles(**task.json())  
