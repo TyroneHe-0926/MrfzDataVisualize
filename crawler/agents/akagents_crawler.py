@@ -1,5 +1,4 @@
 import urllib.parse as ulib_parse
-import json
 
 from bs4.element import Tag as htmlTag
 from datetime import datetime
@@ -11,7 +10,7 @@ import sys, os
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.util.config import ElasticSearchConfig, Config
+from crawler.util.config import ElasticSearchConfig
 from crawler.util import util
 from crawler.crawler import Crawler, Task
 
@@ -176,17 +175,25 @@ class AgentCrawler(Crawler):
     def __init__(self, base_url):
         super().__init__(base_url)
         
-    def parse_agent(self, agent_tabs: List[htmlTag], mode, save_img):
+    def parse_agent(self, agent_tabs: List[htmlTag], **task):
         for agent_tab in agent_tabs:
             agent_name = agent_tab.find("p", {"class": "handbook-item-name"}).text
+
+            if task["name"] == "sync":
+                if es_client.search(index="arknights-agents", query={
+                    "match": { "name.keyword": agent_name }
+                })["hits"]["total"]["value"] > 0: 
+                    logger.info(f"Agent {agent_name} hit, skipping")
+                    continue
+            
             agent_avatar = agent_tab.find("img", {"alt": agent_name}).get("src")
 
-            if save_img: util.download_image(agent_avatar, "./temp/images/agents")
+            if task["save_img"]: util.download_image(agent_avatar, "./temp/images/agents")
            
             agent_page_url = "https://wiki.biligame.com/arknights/"+agent_name
             encoded_url = ulib_parse.quote(agent_page_url, safe=':/?=&')
             infoCrawler = AgentInfoCrawler(encoded_url)
-            infoCrawler.get_agent_info(agent_name, agent_avatar, mode)
+            infoCrawler.get_agent_info(agent_name, agent_avatar, task["mode"])
             
     def parse_agent_list(self, **task):
         agent_tabs: htmlTag = self.soup.find("div", {"class": "resp-tabs-container"})
@@ -194,7 +201,7 @@ class AgentCrawler(Crawler):
         for tab in agent_tabs:
             if(isinstance(tab, htmlTag)):
                 tab_agents = tab.find_all("div", {"class": "handbook-item-container"})
-                self.parse_agent(tab_agents, task["mode"], task["save_img"])
+                self.parse_agent(tab_agents, **task)
 
 def dispatch(task: Task):
     akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
