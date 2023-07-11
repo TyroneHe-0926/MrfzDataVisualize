@@ -125,7 +125,7 @@ class NewsCrawler(Crawler):
     def __init__(self, base_url):
         super().__init__(base_url)
     
-    def parse_articles(self, mode, save_img):
+    def parse_articles(self, **task):
         news_articles = self.soup.find("ol", {"data-category-key": "ACTIVITY"})
         
         for index, child_node in enumerate(news_articles):
@@ -135,16 +135,16 @@ class NewsCrawler(Crawler):
             url: str = self.base_url + href["href"].split("/")[-1]
             
             article = Article(date=date.text, url=url, title=title.text)
-            article.parse_content(download=save_img)
+            article.parse_content(download=task["save_img"])
             
-            if mode == "prod": article.save(index)
-            if mode == "dev": 
+            if task["mode"] == "prod": article.save(index)
+            if task["mode"] == "dev": 
                 util.save_json(f"./temp/news/article_{index}.json", article.to_json(index))
 
 def dispatch(task: Task):
-    if task.name == "crawl":
-        logger.info("Running News Crawler")
+    akurl = "https://ak.hypergryph.com/news/"
+    news_crawler = NewsCrawler(base_url=akurl)
 
-        akurl = "https://ak.hypergryph.com/news/"
-        news_crawler = NewsCrawler(base_url=akurl)
-        news_crawler.parse_articles(mode=task.mode, save_img=task.save_img)
+    logger.info(f"Running News {task.name}")
+
+    news_crawler.parse_articles(**task.json())  

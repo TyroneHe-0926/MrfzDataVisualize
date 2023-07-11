@@ -188,18 +188,18 @@ class AgentCrawler(Crawler):
             infoCrawler = AgentInfoCrawler(encoded_url)
             infoCrawler.get_agent_info(agent_name, agent_avatar, mode)
             
-    def parse_agent_list(self, mode, save_img):
+    def parse_agent_list(self, **task):
         agent_tabs: htmlTag = self.soup.find("div", {"class": "resp-tabs-container"})
 
         for tab in agent_tabs:
             if(isinstance(tab, htmlTag)):
                 tab_agents = tab.find_all("div", {"class": "handbook-item-container"})
-                self.parse_agent(tab_agents, mode, save_img)
+                self.parse_agent(tab_agents, task["mode"], task["save_img"])
 
 def dispatch(task: Task):
-    if task.name == "crawl":
-        logger.info("Running Agents Crawler")
+    akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
+    agentCrawler = AgentCrawler(base_url=akurl)
 
-        akurl = "https://wiki.biligame.com/arknights/%E5%B9%B2%E5%91%98%E4%B8%80%E8%A7%88"
-        agentCrawler = AgentCrawler(base_url=akurl)
-        agentCrawler.parse_agent_list(mode=task.mode, save_img=task.save_img)
+    logger.info(f"Running Agents {task.name}")
+
+    agentCrawler.parse_agent_list(**task.json())
