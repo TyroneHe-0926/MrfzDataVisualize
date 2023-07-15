@@ -11,22 +11,17 @@ source "${BASH_SOURCE[0]%/*}"/lib.sh
 
 declare -A users_passwords
 users_passwords=(
-	[logstash_internal]="${LOGSTASH_INTERNAL_PASSWORD:-}"
 	[kibana_system]="${KIBANA_SYSTEM_PASSWORD:-}"
 )
 
 declare -A users_roles
-users_roles=(
-	[logstash_internal]='logstash_writer'
-)
+users_roles=()
 
 # --------------------------------------------------------
 # Roles declarations
 
 declare -A roles_files
-roles_files=(
-	[logstash_writer]='logstash_writer.json'
-)
+roles_files=()
 
 # --------------------------------------------------------
 
