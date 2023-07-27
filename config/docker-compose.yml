@@ -1,26 +1,6 @@
 version: '3.7'
 
 services:
-  setup:
-    profiles:
-      - setup
-    build:
-      context: setup/
-      args:
-        ELASTIC_VERSION: ${ELASTIC_VERSION}
-    init: true
-    volumes:
-      - ./setup/entrypoint.sh:/entrypoint.sh:ro,Z
-      - ./setup/lib.sh:/lib.sh:ro,Z
-      - ./setup/roles:/roles:ro,Z
-    environment:
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
-      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
-    networks:
-      - elk
-    depends_on:
-      - elasticsearch
-
   elasticsearch:
     build:
       context: elasticsearch/
