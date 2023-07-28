@@ -1,11 +1,11 @@
 #!/bin/bash
 
-ES_USER=elastic
-ES_PASSWORD=xxx
+ES_USER=$1
+ES_PASSWORD=$2
 
 echo "Waiting for Kibana to launch on 5601"
 
-while ! curl --output /dev/null --silent --head --fail http://localhost:5601; do 
+while ! curl --output /dev/null --silent --head --fail kibana:5601; do 
     sleep 1 && echo -n .; 
 done;
 
