@@ -6,7 +6,9 @@
 ### Setup
 Setting up the environment and dashboards
 - `python3 -m pip install -r requirements.txt`
-- `cd config && docker compose up -d`
+- `cd config && mv .env.template .env`
+- setup your password in .env
+- `docker compose up -d`
 
 ### Get started
 Get a list of the supported operations with `python3 start.py --help`
