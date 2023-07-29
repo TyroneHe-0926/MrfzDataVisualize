@@ -24,7 +24,7 @@ attr_lookup_table = {
     "生命": "health",
     "攻击": "attack",
     "防御": "defense",
-    "法抗": "resistance"
+    "法术抗性": "resistance" # 7.28 wiki layout update
 }
 
 def run(command: str): os.system(command)

@@ -20,7 +20,7 @@ class AgentSpec:
     
     class WrongSpecsException(Exception):
 
-        def __init__(): pass
+        def __init__(self): pass
 
     class Spec:
         """
@@ -83,22 +83,25 @@ class AgentInfoCrawler(Crawler):
                 if(row.name == "th"): curkey = row.text.replace("\n", "")
                 if(row.name == "td" and curkey in util.attr_lookup_table): 
                     curval = row.text.replace("\n", "")
+                    if not curval: continue
                     ret.update({
                         util.attr_lookup_table[curkey]: curval
                     })
-        
         return ret
     
-    def get_spec_dict(self, spec_table: List[htmlTag]):
+    @staticmethod
+    def get_spec_dict(spec_table: List[htmlTag]):
         spec_dict = {}
 
         for row in spec_table:
+
+            # 7.28 wiki layout update
             td_list = row.find_all("td")
-            for index, td in enumerate(td_list):
-                spec_name = td.text.replace("\n", "")
-                if spec_name in util.attr_lookup_table:
-                    specs = [tag.text.replace("\n", "") for tag in td_list[index+1: index+6]]
-                    spec_dict.update({util.attr_lookup_table[spec_name]: specs})
+            spec_name = row.find("th").text.replace("\n", "")
+
+            if spec_name in util.attr_lookup_table:
+                specs = [tag.text.replace("\n", "") for tag in td_list]
+                spec_dict.update({util.attr_lookup_table[spec_name]: specs})
         
         return spec_dict
 
@@ -114,8 +117,7 @@ class AgentInfoCrawler(Crawler):
 
         # create agent util dict from html table
         agent_util = AgentUtil(**(AgentInfoCrawler.create_dict(util_table)))
-        spec_dict = self.get_spec_dict(spec_table)
-        agent_spec = AgentSpec(**spec_dict)
+        agent_spec = AgentSpec(**(AgentInfoCrawler.get_spec_dict(spec_table)))
         
         return agent_util, agent_spec
 
@@ -159,10 +161,13 @@ class AgentInfoCrawler(Crawler):
         agent_dict.update({"e2_upgrades": e2_upgrades})
         
         # get mod info
-        mod = self.soup.find("div", {
-            "style": "width:80%;padding:5px;background-color:#e1e1e1;display: flex;align-items: center;"
-        }).text
-        agent_dict.update({"mod": mod})
+        # TODO wiki layout updating as of 2023.7.28, mod is not updated yet on official site
+        # mod = self.soup.find("div", {
+        #     "style": "width:80%;padding:5px;background-color:#e1e1e1;display: flex;align-items: center;"
+        # }).text
+        # agent_dict.update({"mod": mod})
+
+        agent_dict.update({"mod": "wiki网站更新中"})
 
         agent = Agent(**agent_dict)
         agent.set_agent_spec(agent_spec)
