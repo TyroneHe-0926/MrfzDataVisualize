@@ -9,7 +9,7 @@ Setting up the environment and dashboards
 - `cd config && mv .env.template .env`
 - setup your password in .env
 - `docker compose up -d`
-- - `export ES_PASSWORD=${your password}`
+- `export ES_PASSWORD=${your password}`
 
 ### Get started
 Get a list of the supported operations with `python3 start.py --help`
