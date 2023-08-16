@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 import urllib.request as ulib_request
+from abc import ABC
 
 import sys, os
 #run from repo root for now
@@ -20,7 +21,7 @@ class Task(BaseModel):
             "name": self.name
         }
 
-class Crawler:
+class Crawler(ABC):
     
     soup: BeautifulSoup = None
     base_url: str = None
