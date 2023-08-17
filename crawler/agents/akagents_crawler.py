@@ -3,18 +3,15 @@ import urllib.parse as ulib_parse
 from bs4.element import Tag as htmlTag
 from datetime import datetime
 from typing import List
-from elasticsearch import Elasticsearch
 from loguru import logger
 
 import sys, os
 #run from repo root for now
 sys.path.insert(1, os.getcwd())
 
-from crawler.util.config import ElasticSearchConfig
+from crawler.util.config import es_client
 from crawler.util import util
 from crawler.crawler import Crawler, Task
-
-es_client = Elasticsearch(ElasticSearchConfig.ES_SERVER_URL)
 
 class AgentSpec:
     
@@ -214,4 +211,4 @@ def dispatch(task: Task):
 
     logger.info(f"Running Agents {task.name}")
 
-    agentCrawler.parse_agent_list(**task.json())
+    agentCrawler.parse_agent_list(**task.model_dump())

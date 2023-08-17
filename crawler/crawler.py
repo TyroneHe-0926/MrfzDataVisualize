@@ -14,13 +14,6 @@ class Task(BaseModel):
     mode: str
     save_img: bool
 
-    def json(self):
-        return {
-            "mode": self.mode,
-            "save_img": self.save_img,
-            "name": self.name
-        }
-
 class Crawler(ABC):
     
     soup: BeautifulSoup = None

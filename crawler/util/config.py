@@ -1,4 +1,5 @@
 import os
+from elasticsearch import Elasticsearch
 
 class Config:
     host = "localhost"
@@ -12,3 +13,5 @@ class ElasticSearchConfig:
     ES_USERNAME = "elastic"
     ES_PASSWORD=  os.environ.get("ES_PASSWORD")
     ES_SERVER_URL = f'http://{ES_USERNAME}:{ES_PASSWORD}@{Config.host}:{ES_SERVER_PORT}'
+
+es_client = Elasticsearch(ElasticSearchConfig.ES_SERVER_URL)
