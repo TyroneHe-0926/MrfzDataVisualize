@@ -179,7 +179,7 @@ class AgentCrawler(Crawler):
         
     def parse_agent(self, agent_tabs: List[htmlTag], **task):
         for agent_tab in agent_tabs:
-            agent_name = agent_tab.find("p", {"class": "handbook-item-name"}).text
+            agent_name = agent_tab.find("div", {"class": "operator-handbook-item-component operator-handbook-item-name"}).text
 
             if task["name"] == "sync":
                 if es_client.search(index="arknights-agents", query={
@@ -188,7 +188,7 @@ class AgentCrawler(Crawler):
                     logger.info(f"Agent {agent_name} hit, skipping")
                     continue
             
-            agent_avatar = agent_tab.find("img", {"alt": agent_name}).get("src")
+            agent_avatar = agent_tab.find("img", {"alt": f"{agent_name}06.png"}).get("src")
 
             if task["save_img"]: util.download_image(agent_avatar, "./temp/images/agents")
            
@@ -202,7 +202,7 @@ class AgentCrawler(Crawler):
 
         for tab in agent_tabs:
             if(isinstance(tab, htmlTag)):
-                tab_agents = tab.find_all("div", {"class": "handbook-item-container"})
+                tab_agents = tab.find_all("div", {"class": "operator-handbook-item-wrapper"})
                 self.parse_agent(tab_agents, **task)
 
 def dispatch(task: Task):
